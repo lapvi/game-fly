@@ -2,90 +2,583 @@
 <html lang="vi">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Flappy Dog Deluxe</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Dog Dodge — Game sinh tồn</title>
     <style>
         * {
-            margin: 0;
-            padding: 0;
             box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        html,
+        body {
+            height: 100%
         }
 
         body {
-            background: linear-gradient(#6dd5fa, #ffffff);
             display: flex;
-            justify-content: center;
             align-items: center;
-            height: 100vh;
-            font-family: "Poppins", sans-serif;
-            overflow: hidden;
+            justify-content: center;
+            background: linear-gradient(#2b8cff, #8fe1ff);
+            font-family: Inter, system-ui, Arial;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        #gameWrap {
+            position: relative;
+            width: 360px;
+            max-width: 94vw;
         }
 
         canvas {
-            border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            touch-action: manipulation;
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: 14px;
+            box-shadow: 0 8px 30px rgba(6, 21, 49, 0.25);
+            background: #87ceeb
         }
 
-        #jumpBtn {
-            position: fixed;
-            bottom: 25px;
-            right: 25px;
-            background: #ffd600;
-            border: none;
-            color: #333;
-            font-size: 22px;
-            border-radius: 50%;
-            width: 80px;
-            height: 80px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-            font-weight: bold;
-            cursor: pointer;
+        #hud {
+            position: absolute;
+            left: 12px;
+            top: 12px;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+            font-weight: 600;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        #hud .pill {
+            background: rgba(0, 0, 0, 0.25);
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 14px
         }
 
         #menu {
             position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.1));
+            flex-direction: column;
+            gap: 14px;
+            color: #fff;
             text-align: center;
-            color: white;
-            font-weight: bold;
-            z-index: 2;
+            padding: 20px;
+            border-radius: 14px;
         }
 
         #menu h1 {
-            font-size: 36px;
-            color: #fff;
-            text-shadow: 2px 2px 5px #000;
+            font-size: 22px;
+            margin-bottom: 4px;
+            text-shadow: 0 4px 14px rgba(0, 0, 0, 0.4)
         }
 
-        #startBtn {
-            margin-top: 20px;
-            padding: 10px 20px;
-            background: #ffcc00;
-            color: #333;
+        #menu p {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.9)
+        }
+
+        .btn {
+            background: linear-gradient(#ffd94a, #ffb700);
             border: none;
+            padding: 10px 18px;
             border-radius: 10px;
-            font-size: 20px;
+            font-weight: 700;
             cursor: pointer;
-            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
         }
 
-        #startBtn:hover {
-            background: #ffe066;
+        .btn.secondary {
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+            box-shadow: none
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 14px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 12px;
+            pointer-events: none;
+        }
+
+        .ctrlBtn {
+            pointer-events: auto;
+            width: 76px;
+            height: 76px;
+            border-radius: 50%;
+            border: none;
+            font-size: 30px;
+            background: linear-gradient(#fff, #f0f0f0);
+            opacity: 0.95;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+        }
+
+        .ctrlBtn:active {
+            transform: translateY(2px)
+        }
+
+        #leftBtn {
+            align-self: flex-end
+        }
+
+        #rightBtn {
+            align-self: flex-end
+        }
+
+        /* small mobile adjustments */
+        @media (max-width:420px) {
+            #gameWrap {
+                width: 92vw
+            }
+
+            .ctrlBtn {
+                width: 64px;
+                height: 64px;
+                font-size: 26px
+            }
         }
     </style>
 </head>
 
 <body>
-    <div id="menu">
-        <h1>🐶 Flappy Dog Deluxe 💩</h1>
-        <button id="startBtn">Chơi ngay</button>
+    <div id="gameWrap">
+        <canvas id="c"></canvas>
+
+        <div id="hud">
+            <div class="pill" id="score">Score: 0</div>
+            <div class="pill" id="time">Time: 0s</div>
+            <div class="pill" id="high">Best: 0</div>
+        </div>
+
+        <div id="menu">
+            <h1>🐶 Dog Dodge — Sinh tồn dưới mưa vật thể</h1>
+            <p>Điều khiển chó bằng phím ← → hoặc chạm 2 nút bên dưới. Né đá, bom. Ăn Power-up để sống lâu hơn!</p>
+            <div style="display:flex;gap:10px">
+                <button class="btn" id="startBtn">Chơi ngay</button>
+                <button class="btn secondary" id="howBtn">Hướng dẫn</button>
+            </div>
+            <p style="font-size:12px; opacity:0.95">Tìm hình: <em>player.png, obstacle.png, powerup_shield.png,
+                    powerup_slow.png</em> — nếu chưa có, game vẫn chạy với đồ họa tạm.</p>
+        </div>
+
+        <div id="controls">
+            <button id="leftBtn" class="ctrlBtn">◀</button>
+            <button id="rightBtn" class="ctrlBtn">▶</button>
+        </div>
     </div>
 
-    <canvas id="gameCanvas"></canvas>
-    <button id="jumpBtn">↑</button>
+    <script>
+        // =========================
+        // Dog Dodge — Single file
+        // =========================
 
-    <script src="game.js"></script>
+        // Canvas setup
+        const canvas = document.getElementById('c');
+        const ctx = canvas.getContext('2d');
+        function fitCanvas() {
+            const wrap = document.getElementById('gameWrap');
+            const width = wrap.clientWidth;
+            const ratio = 540 / 360; // internal H/W to keep consistent feel
+            canvas.width = 360; // logical width
+            canvas.height = 540; // logical height
+            canvas.style.width = width + 'px';
+            canvas.style.height = (width * canvas.height / canvas.width) + 'px';
+        }
+        fitCanvas();
+        window.addEventListener('resize', fitCanvas);
+
+        // Assets (placeholders allowed)
+        const ASSETS = {
+            player: 'player.png',
+            obstacle: 'obstacle.png',
+            powerShield: 'powerup_shield.png',
+            powerSlow: 'powerup_slow.png',
+            hitSound: 'hit.mp3',
+            collectSound: 'collect.mp3'
+        };
+
+        function loadImg(src) {
+            const i = new Image();
+            i.src = src;
+            return i;
+        }
+        const IMG = {
+            player: loadImg(ASSETS.player),
+            obstacle: loadImg(ASSETS.obstacle),
+            powerShield: loadImg(ASSETS.powerShield),
+            powerSlow: loadImg(ASSETS.powerSlow)
+        };
+        // Sounds (optional, safe try)
+        let SFX = {};
+        try {
+            SFX.hit = new Audio(ASSETS.hitSound);
+            SFX.collect = new Audio(ASSETS.collectSound);
+        } catch (e) { /* ignore if not available */ }
+
+        // Game state
+        let state = {
+            running: false,
+            gameOver: false,
+            score: 0,
+            time: 0,
+            high: Number(localStorage.getItem('dogdodge_high') || 0),
+            spawnTimer: 0,
+            spawnInterval: 900, // ms
+            obstacles: [],
+            powers: [],
+            player: null,
+            difficultyTimer: 0,
+            lastTime: null,
+            shake: 0
+        };
+
+        // Player object
+        function createPlayer() {
+            return {
+                x: canvas.width / 2 - 18,
+                y: canvas.height - 80,
+                w: 36,
+                h: 36,
+                speed: 220, // px per second
+                vx: 0,
+                shield: 0,        // ms left
+                slowLeft: 0       // ms left (global effect)
+            };
+        }
+
+        // Helpers
+        function rand(min, max) { return Math.random() * (max - min) + min; }
+        function now() { return performance.now(); }
+
+        // Spawning obstacles and power-ups
+        function spawnObstacle() {
+            // obstacle types: 'rock' (hurt), 'bomb' (bigger), 'fast' (small fast)
+            const types = ['rock', 'rock', 'fast', 'rock', 'bomb'];
+            const t = types[Math.floor(Math.random() * types.length)];
+            const sizeMap = { rock: 28, fast: 20, bomb: 40 };
+            const speedMap = { rock: 100, fast: 180, bomb: 90 };
+            const o = {
+                type: t,
+                x: rand(10, canvas.width - (sizeMap[t] || 28) - 10),
+                y: - (sizeMap[t] || 28),
+                size: sizeMap[t] || 28,
+                vy: (speedMap[t] || 110) + rand(-10, 30)
+            };
+            state.obstacles.push(o);
+        }
+
+        function spawnPower() {
+            // Types: shield (+invincible small time), slow (slows obstacles briefly)
+            const types = ['shield', 'slow'];
+            const t = types[Math.floor(Math.random() * types.length)];
+            const p = {
+                type: t,
+                x: rand(20, canvas.width - 40),
+                y: -30,
+                size: 30,
+                vy: 90
+            };
+            state.powers.push(p);
+        }
+
+        // Reset & start
+        function startGame() {
+            state.running = true;
+            state.gameOver = false;
+            state.score = 0;
+            state.time = 0;
+            state.spawnTimer = 0;
+            state.spawnInterval = 900;
+            state.obstacles = [];
+            state.powers = [];
+            state.player = createPlayer();
+            state.difficultyTimer = 0;
+            state.lastTime = now();
+            document.getElementById('menu').style.display = 'none';
+            requestAnimationFrame(loop);
+        }
+
+        // End game
+        function endGame() {
+            state.running = false;
+            state.gameOver = true;
+            if (state.score > state.high) {
+                state.high = state.score;
+                localStorage.setItem('dogdodge_high', state.high);
+            }
+            document.getElementById('menu').style.display = 'flex';
+            document.getElementById('menu').querySelector('h1').textContent = '🐶 Kết thúc — Bạn trụ được: ' + state.time.toFixed(1) + 's';
+            document.getElementById('menu').querySelector('p').textContent = 'Điểm: ' + state.score + ' — Best: ' + state.high;
+        }
+
+        // Input handling
+        const keys = {};
+        document.addEventListener('keydown', e => {
+            keys[e.code] = true;
+            if (e.code === 'ArrowLeft' || e.code === 'ArrowRight' || e.code === 'Space') e.preventDefault();
+            if (state.gameOver && (e.code === 'Space' || e.code === 'ArrowUp')) startGame();
+        });
+        document.addEventListener('keyup', e => { keys[e.code] = false; });
+
+        // Touch buttons
+        const leftBtn = document.getElementById('leftBtn');
+        const rightBtn = document.getElementById('rightBtn');
+        let leftActive = false, rightActive = false;
+        leftBtn.addEventListener('touchstart', e => { leftActive = true; e.preventDefault(); });
+        leftBtn.addEventListener('touchend', e => { leftActive = false; e.preventDefault(); });
+        leftBtn.addEventListener('mousedown', () => leftActive = true);
+        leftBtn.addEventListener('mouseup', () => leftActive = false);
+
+        rightBtn.addEventListener('touchstart', e => { rightActive = true; e.preventDefault(); });
+        rightBtn.addEventListener('touchend', e => { rightActive = false; e.preventDefault(); });
+        rightBtn.addEventListener('mousedown', () => rightActive = true);
+        rightBtn.addEventListener('mouseup', () => rightActive = false);
+
+        // HUD updating
+        function updateHUD() {
+            document.getElementById('score').textContent = 'Score: ' + Math.floor(state.score);
+            document.getElementById('time').textContent = 'Time: ' + state.time.toFixed(1) + 's';
+            document.getElementById('high').textContent = 'Best: ' + state.high;
+        }
+
+        // Collision AABB
+        function collide(a, b) {
+            return !(a.x + a.w < b.x || a.x > b.x + b.size || a.y + a.h < b.y || a.y > b.y + b.size);
+        }
+
+        // Main loop
+        function loop() {
+            if (!state.running) return;
+            const t = now();
+            const dt = Math.min(40, t - (state.lastTime || t)) / 1000; // sec
+            state.lastTime = t;
+
+            // Update timers
+            state.time += dt;
+            state.spawnTimer += dt * 1000;
+            state.difficultyTimer += dt;
+
+            // Difficulty: gradually increase spawn frequency and obstacle speed
+            if (state.difficultyTimer > 5) {
+                state.spawnInterval = Math.max(450, state.spawnInterval - 40); // min 450ms
+                state.difficultyTimer = 0;
+            }
+
+            // Movement input
+            const p = state.player;
+            p.vx = 0;
+            if (keys['ArrowLeft'] || leftActive) p.vx = -p.speed;
+            if (keys['ArrowRight'] || rightActive) p.vx = p.speed;
+            // allow tap space to jump (dash) - quick evade
+            if (keys['Space']) {
+                // short dash: small vertical move up, slight invul
+                p.y -= 8;
+                keys['Space'] = false;
+            }
+
+            // update player pos
+            p.x += p.vx * dt;
+            // clamp
+            p.x = Math.max(6, Math.min(canvas.width - p.w - 6, p.x));
+            // player falls a tiny bit if above bottom (to keep grounded)
+            p.y += 0 * dt;
+
+            // spawn obstacles
+            if (state.spawnTimer >= state.spawnInterval) {
+                spawnObstacle();
+                // sometimes spawn power
+                if (Math.random() < 0.18) spawnPower();
+                state.spawnTimer = 0;
+            }
+
+            // update obstacles
+            for (let i = state.obstacles.length - 1; i >= 0; i--) {
+                const o = state.obstacles[i];
+                // slow effect reduces vy
+                const slowFactor = p.slowLeft > 0 ? 0.45 : 1;
+                o.y += o.vy * dt * slowFactor;
+
+                // collision
+                const obsBox = { x: o.x, y: o.y, size: o.size };
+                const playerBox = { x: p.x, y: p.y, w: p.w, h: p.h };
+                if (collide(playerBox, obsBox)) {
+                    // if shield active => destroy obstacle
+                    if (p.shield > 0) {
+                        state.obstacles.splice(i, 1);
+                        state.score += 1;
+                        if (SFX.collect) try { SFX.collect.play(); } catch (e) { }
+                    } else {
+                        // hit -> game over
+                        state.shake = 8;
+                        if (SFX.hit) try { SFX.hit.play(); } catch (e) { }
+                        endGame();
+                        return;
+                    }
+                } else if (o.y > canvas.height + 40) {
+                    // passed beyond screen: remove and gain score/time
+                    state.obstacles.splice(i, 1);
+                    state.score += Math.max(0, Math.floor(0.8 * (50 / o.size))); // smaller objs give more
+                }
+            }
+
+            // update powers
+            for (let i = state.powers.length - 1; i >= 0; i--) {
+                const q = state.powers[i];
+                q.y += q.vy * dt;
+                const pbox = { x: p.x, y: p.y, w: p.w, h: p.h };
+                const qbox = { x: q.x, y: q.y, size: q.size };
+                if (collide(pbox, qbox)) {
+                    // collect
+                    if (q.type === 'shield') {
+                        p.shield = 3000; // 3 sec
+                    } else if (q.type === 'slow') {
+                        p.slowLeft = 4000; // 4 sec
+                    }
+                    state.powers.splice(i, 1);
+                    state.score += 5;
+                    if (SFX.collect) try { SFX.collect.play(); } catch (e) { }
+                } else if (q.y > canvas.height + 40) {
+                    state.powers.splice(i, 1);
+                }
+            }
+
+            // update player timers
+            if (p.shield > 0) p.shield = Math.max(0, p.shield - dt * 1000);
+            if (p.slowLeft > 0) p.slowLeft = Math.max(0, p.slowLeft - dt * 1000);
+
+            // increase score by time survived
+            state.score += dt * 1.2; // slowly increases per second
+
+            // draw
+            draw();
+
+            // HUD
+            state.time += 0; // already increased
+            updateHUD();
+
+            // next frame
+            requestAnimationFrame(loop);
+        }
+
+        // Draw scene
+        function draw() {
+            // Clear
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // background simple gradient
+            const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            g.addColorStop(0, '#7ec8ff');
+            g.addColorStop(1, '#cdefff');
+            ctx.fillStyle = g;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // ground stripe
+            ctx.fillStyle = '#6fc06f';
+            ctx.fillRect(0, canvas.height - 46, canvas.width, 46);
+
+            // obstacles
+            state.obstacles.forEach(o => {
+                if (IMG.obstacle.complete) {
+                    ctx.drawImage(IMG.obstacle, o.x, o.y, o.size, o.size);
+                } else {
+                    // placeholder
+                    ctx.fillStyle = o.type === 'bomb' ? '#b33' : '#854';
+                    ctx.beginPath();
+                    ctx.rect(o.x, o.y, o.size, o.size);
+                    ctx.fill();
+                }
+                // shadow
+                ctx.fillStyle = 'rgba(0,0,0,0.08)';
+                ctx.fillRect(o.x + 4, o.y + o.size - 4, o.size - 8, 6);
+            });
+
+            // powers (draw with little rotation)
+            state.powers.forEach(q => {
+                if (IMG.powerShield.complete && q.type === 'shield') {
+                    ctx.drawImage(IMG.powerShield, q.x, q.y, q.size, q.size);
+                } else if (IMG.powerSlow.complete && q.type === 'slow') {
+                    ctx.drawImage(IMG.powerSlow, q.x, q.y, q.size, q.size);
+                } else {
+                    ctx.fillStyle = '#f1c40f';
+                    ctx.beginPath();
+                    ctx.arc(q.x + q.size / 2, q.y + q.size / 2, q.size / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+
+            // player (with shield ring if active)
+            const p = state.player;
+            // shake effect
+            let sx = 0, sy = 0;
+            if (state.shake > 0) { sx = (Math.random() - 0.5) * state.shake; sy = (Math.random() - 0.5) * state.shake; state.shake = Math.max(0, state.shake - 0.6); }
+            ctx.save();
+            ctx.translate(sx, sy);
+
+            if (IMG.player.complete) {
+                ctx.drawImage(IMG.player, p.x, p.y, p.w, p.h);
+            } else {
+                // placeholder: circle dog head
+                ctx.fillStyle = '#e07a5f';
+                ctx.beginPath();
+                ctx.ellipse(p.x + p.w / 2, p.y + p.h / 2, p.w / 2, p.h / 2, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(p.x + 6, p.y + p.h / 2 - 4, 8, 6); // tooth placeholder
+            }
+
+            // shield ring
+            if (p.shield > 0) {
+                ctx.strokeStyle = 'rgba(255,255,150,0.9)';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.ellipse(p.x + p.w / 2, p.y + p.h / 2, p.w, p.h, 0, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // slow power indicator
+            if (p.slowLeft > 0) {
+                ctx.fillStyle = 'rgba(51,122,255,0.18)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            ctx.restore();
+
+            // small UI overlay: surviving time and score drawn on canvas (redundant with HUD)
+            ctx.fillStyle = '#ffffffcc';
+            ctx.font = '11px Inter';
+            ctx.fillText('Survive time: ' + state.time.toFixed(1) + 's', 8, canvas.height - 8);
+        }
+
+        // Bind menu buttons
+        document.getElementById('startBtn').addEventListener('click', () => {
+            startGame();
+        });
+        document.getElementById('howBtn').addEventListener('click', () => {
+            alert('Hướng dẫn:\n\n- Dùng phím ← → hoặc chạm nút trái/phải để di chuyển.\n- Né vật rơi: đá, bom... Nếu bị trúng mà không có shield => kết thúc.\n- Thu power-up Shield để bất tử trong thời gian ngắn.\n- Thu power-up Slow để giảm tốc vật rơi tạm thời.\n- Độ khó tăng dần theo thời gian. Cố gắng sống lâu nhất có thể!');
+        });
+
+        // Show initial high
+        updateHUD();
+
+        // Optional: preload images (no harm)
+        [IMG.player, IMG.obstacle, IMG.powerShield, IMG.powerSlow].forEach(img => {
+            img.onload = () => {/* ok */ };
+            img.onerror = () => {/* ignore */ };
+        });
+
+    </script>
 </body>
 
 </html>
