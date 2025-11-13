@@ -100,11 +100,21 @@ function endGame() {
     document.getElementById("playBtn").addEventListener("click", resetGame);
 }
 
-// Điều khiển
-document.getElementById("leftBtn").addEventListener("mousedown", () => (player.moveLeft = true));
-document.getElementById("rightBtn").addEventListener("mousedown", () => (player.moveRight = true));
-document.getElementById("leftBtn").addEventListener("mouseup", () => (player.moveLeft = false));
-document.getElementById("rightBtn").addEventListener("mouseup", () => (player.moveRight = false));
+// Nút trái
+const leftBtn = document.getElementById("leftBtn");
+const rightBtn = document.getElementById("rightBtn");
+
+// Desktop
+leftBtn.addEventListener("mousedown", () => (player.moveLeft = true));
+leftBtn.addEventListener("mouseup", () => (player.moveLeft = false));
+rightBtn.addEventListener("mousedown", () => (player.moveRight = true));
+rightBtn.addEventListener("mouseup", () => (player.moveRight = false));
+
+// Mobile
+leftBtn.addEventListener("touchstart", e => { e.preventDefault(); player.moveLeft = true; });
+leftBtn.addEventListener("touchend", e => { e.preventDefault(); player.moveLeft = false; });
+rightBtn.addEventListener("touchstart", e => { e.preventDefault(); player.moveRight = true; });
+rightBtn.addEventListener("touchend", e => { e.preventDefault(); player.moveRight = false; });
 document.addEventListener("keydown", e => {
     if (e.key === "ArrowLeft") player.moveLeft = true;
     if (e.key === "ArrowRight") player.moveRight = true;
