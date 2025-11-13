@@ -104,17 +104,30 @@ function endGame() {
 const leftBtn = document.getElementById("leftBtn");
 const rightBtn = document.getElementById("rightBtn");
 
-// Desktop
-leftBtn.addEventListener("mousedown", () => (player.moveLeft = true));
-leftBtn.addEventListener("mouseup", () => (player.moveLeft = false));
-rightBtn.addEventListener("mousedown", () => (player.moveRight = true));
-rightBtn.addEventListener("mouseup", () => (player.moveRight = false));
 
-// Mobile
-leftBtn.addEventListener("touchstart", e => { e.preventDefault(); player.moveLeft = true; });
-leftBtn.addEventListener("touchend", e => { e.preventDefault(); player.moveLeft = false; });
-rightBtn.addEventListener("touchstart", e => { e.preventDefault(); player.moveRight = true; });
-rightBtn.addEventListener("touchend", e => { e.preventDefault(); player.moveRight = false; });
+// Hàm dùng cho mọi thiết bị
+function bindButton(btn, direction) {
+    btn.addEventListener("pointerdown", e => {
+        e.preventDefault();
+        player[direction] = true;
+    });
+    btn.addEventListener("pointerup", e => {
+        e.preventDefault();
+        player[direction] = false;
+    });
+    btn.addEventListener("pointerleave", e => {
+        e.preventDefault();
+        player[direction] = false;
+    });
+    btn.addEventListener("pointercancel", e => {
+        e.preventDefault();
+        player[direction] = false;
+    });
+}
+
+bindButton(leftBtn, "moveLeft");
+bindButton(rightBtn, "moveRight");
+
 document.addEventListener("keydown", e => {
     if (e.key === "ArrowLeft") player.moveLeft = true;
     if (e.key === "ArrowRight") player.moveRight = true;
