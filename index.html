@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Flappy Bird Mobile</title>
+    <title>Flappy Dog Deluxe</title>
     <style>
         * {
             margin: 0;
@@ -13,38 +13,75 @@
         }
 
         body {
-            background: linear-gradient(#70c5ce, #d0f4f7);
+            background: linear-gradient(#6dd5fa, #ffffff);
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
+            font-family: "Poppins", sans-serif;
             overflow: hidden;
         }
 
         canvas {
-            border: 2px solid #000;
-            border-radius: 10px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
             touch-action: manipulation;
         }
 
-        /* Nút bay cho điện thoại */
         #jumpBtn {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #ffcc00;
-            color: #000;
-            font-size: 20px;
+            bottom: 25px;
+            right: 25px;
+            background: #ffd600;
             border: none;
+            color: #333;
+            font-size: 22px;
             border-radius: 50%;
-            width: 70px;
-            height: 70px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            width: 80px;
+            height: 80px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        #menu {
+            position: absolute;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+            z-index: 2;
+        }
+
+        #menu h1 {
+            font-size: 36px;
+            color: #fff;
+            text-shadow: 2px 2px 5px #000;
+        }
+
+        #startBtn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #ffcc00;
+            color: #333;
+            border: none;
+            border-radius: 10px;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        #startBtn:hover {
+            background: #ffe066;
         }
     </style>
 </head>
 
 <body>
+    <div id="menu">
+        <h1>🐶 Flappy Dog Deluxe 💩</h1>
+        <button id="startBtn">Chơi ngay</button>
+    </div>
+
     <canvas id="gameCanvas"></canvas>
     <button id="jumpBtn">↑</button>
 

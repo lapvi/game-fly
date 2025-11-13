@@ -1,197 +1,213 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// ---- CẤU HÌNH GAME ----
 function resizeCanvas() {
     canvas.width = Math.min(window.innerWidth, 400);
-    canvas.height = Math.min(window.innerHeight - 100, 600);
+    canvas.height = Math.min(window.innerHeight - 80, 600);
 }
 resizeCanvas();
 window.addEventListener("resize", resizeCanvas);
 
-// ---- HÌNH ẢNH ----
+// Ảnh
 const dogImg = new Image();
 dogImg.src = "dog.png";
-
 const shitImg = new Image();
 shitImg.src = "shit.png";
+const cloudImg = new Image();
+cloudImg.src = "cloud.png"; // bạn có thể dùng ảnh đám mây
+const grassImg = new Image();
+grassImg.src = "grass.png"; // ảnh cỏ hoặc mặt đất
 
-// ---- BIẾN GAME ----
-let bird = {
-    x: 50,
-    y: 150,
-    width: 40,
-    height: 40,
-    gravity: 0.4,     // nhẹ hơn
-    lift: -7,         // bay dễ hơn
-    velocity: 0
-};
+// Biến game
+let bird, pipes, shits, frame, score, gameOver, gameStarted;
+let bgX = 0, cloudX = 0, grassX = 0;
 
-let pipes = [];
-let shits = [];
-let frame = 0;
-let score = 0;
-let gameOver = false;
+function resetGame() {
+    bird = { x: 60, y: 200, w: 40, h: 40, g: 0.35, v: 0, lift: -7 };
+    pipes = [];
+    shits = [];
+    frame = 0;
+    score = 0;
+    gameOver = false;
+}
 
-// ---- HÀM VẼ ----
-function drawBird() {
-    if (dogImg.complete) {
-        ctx.drawImage(dogImg, bird.x, bird.y, bird.width, bird.height);
-    } else {
-        ctx.fillStyle = "brown";
-        ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
+// Khởi tạo
+resetGame();
+gameStarted = false;
+
+// Nền di chuyển
+function drawBackground() {
+    // bầu trời
+    const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    grad.addColorStop(0, "#6dd5fa");
+    grad.addColorStop(1, "#ffffff");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // đám mây di chuyển
+    cloudX -= 0.3;
+    if (cloudImg.complete) {
+        ctx.drawImage(cloudImg, cloudX, 50, canvas.width, 100);
+        ctx.drawImage(cloudImg, cloudX + canvas.width, 50, canvas.width, 100);
+        if (cloudX <= -canvas.width) cloudX = 0;
+    }
+
+    // mặt đất di chuyển
+    grassX -= 2;
+    if (grassImg.complete) {
+        ctx.drawImage(grassImg, grassX, canvas.height - 40, canvas.width, 40);
+        ctx.drawImage(grassImg, grassX + canvas.width, canvas.height - 40, canvas.width, 40);
+        if (grassX <= -canvas.width) grassX = 0;
     }
 }
 
+// Tạo ống
 function createPipe() {
-    const gap = 160; // to hơn => dễ hơn
-    const topHeight = Math.random() * (canvas.height / 2 - 50) + 20;
-    pipes.push({
-        x: canvas.width,
-        top: topHeight,
-        bottom: topHeight + gap,
-        width: 50
-    });
+    const gap = 170;
+    const topH = Math.random() * (canvas.height / 2 - 40) + 20;
+    pipes.push({ x: canvas.width, top: topH, bottom: topH + gap, w: 50, color: randomColor() });
 
-    // Thỉnh thoảng sinh ra "shit" giữa khoảng trống
-    if (Math.random() < 0.6) {
+    if (Math.random() < 0.8) {
         shits.push({
-            x: canvas.width + 100,
-            y: topHeight + gap / 2 - 15,
+            x: canvas.width + 60,
+            y: topH + gap / 2 - 15,
             size: 30,
-            collected: false
+            collected: false,
+            angle: 0,
+            floating: 0
         });
     }
 }
 
+function randomColor() {
+    const colors = ["#4CAF50", "#3CB371", "#5DD39E", "#77DD77"];
+    return colors[Math.floor(Math.random() * colors.length)];
+}
+
 function drawPipes() {
-    ctx.fillStyle = "green";
     pipes.forEach(pipe => {
-        ctx.fillRect(pipe.x, 0, pipe.width, pipe.top);
-        ctx.fillRect(pipe.x, pipe.bottom, pipe.width, canvas.height - pipe.bottom);
+        const grad = ctx.createLinearGradient(pipe.x, 0, pipe.x + pipe.w, 0);
+        grad.addColorStop(0, pipe.color);
+        grad.addColorStop(1, "#2e8b57");
+        ctx.fillStyle = grad;
+        ctx.fillRect(pipe.x, 0, pipe.w, pipe.top);
+        ctx.fillRect(pipe.x, pipe.bottom, pipe.w, canvas.height - pipe.bottom);
     });
 }
 
+// Vẽ shit xoay tròn
 function drawShits() {
-    shits.forEach(shit => {
-        if (!shit.collected) {
-            if (shitImg.complete) {
-                ctx.drawImage(shitImg, shit.x, shit.y, shit.size, shit.size);
-            } else {
-                ctx.fillStyle = "brown";
-                ctx.beginPath();
-                ctx.arc(shit.x + 15, shit.y + 15, 10, 0, Math.PI * 2);
-                ctx.fill();
-            }
+    shits.forEach(s => {
+        if (!s.collected) {
+            s.angle += 0.1;
+            s.floating = Math.sin(frame / 10) * 2;
+            ctx.save();
+            ctx.translate(s.x + s.size / 2, s.y + s.size / 2 + s.floating);
+            ctx.rotate(s.angle);
+            ctx.drawImage(shitImg, -s.size / 2, -s.size / 2, s.size, s.size);
+            ctx.restore();
         }
     });
 }
 
-// ---- VA CHẠM ----
+function drawBird() {
+    if (dogImg.complete) ctx.drawImage(dogImg, bird.x, bird.y, bird.w, bird.h);
+    else {
+        ctx.fillStyle = "brown";
+        ctx.fillRect(bird.x, bird.y, bird.w, bird.h);
+    }
+}
+
 function checkCollision(pipe) {
     if (
-        bird.x < pipe.x + pipe.width &&
-        bird.x + bird.width > pipe.x &&
-        (bird.y < pipe.top || bird.y + bird.height > pipe.bottom)
-    ) {
-        gameOver = true;
-    }
-    if (bird.y + bird.height > canvas.height || bird.y < 0) {
-        gameOver = true;
+        bird.x < pipe.x + pipe.w &&
+        bird.x + bird.w > pipe.x &&
+        (bird.y < pipe.top || bird.y + bird.h > pipe.bottom)
+    ) gameOver = true;
+    if (bird.y + bird.h > canvas.height - 40 || bird.y < 0) gameOver = true;
+}
+
+function checkCollect(s) {
+    if (!s.collected &&
+        bird.x < s.x + s.size &&
+        bird.x + bird.w > s.x &&
+        bird.y < s.y + s.size &&
+        bird.y + bird.h > s.y) {
+        s.collected = true;
+        score += 5;
+        // hiệu ứng nổi điểm
+        ctx.fillStyle = "yellow";
+        ctx.font = "bold 20px Arial";
+        ctx.fillText("+5!", s.x, s.y - 10);
     }
 }
 
-function checkCollectShit(shit) {
-    if (!shit.collected &&
-        bird.x < shit.x + shit.size &&
-        bird.x + bird.width > shit.x &&
-        bird.y < shit.y + shit.size &&
-        bird.y + bird.height > shit.y
-    ) {
-        shit.collected = true;
-        score += 3; // mỗi "shit" cộng 3 điểm
-    }
-}
-
-// ---- CẬP NHẬT ----
 function update() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBackground();
+
+    if (!gameStarted) return;
+
     if (gameOver) {
         ctx.fillStyle = "rgba(0,0,0,0.5)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "#fff";
-        ctx.font = "32px Arial";
-        ctx.fillText("Game Over!", canvas.width / 2 - 80, canvas.height / 2 - 20);
-        ctx.font = "20px Arial";
-        ctx.fillText("Nhấn ↑ để chơi lại", canvas.width / 2 - 90, canvas.height / 2 + 20);
+        ctx.font = "32px Poppins";
+        ctx.fillText("Game Over", canvas.width / 2 - 80, canvas.height / 2 - 20);
+        ctx.font = "20px Poppins";
+        ctx.fillText("Điểm: " + score, canvas.width / 2 - 40, canvas.height / 2 + 15);
+        ctx.fillText("Nhấn ↑ để chơi lại", canvas.width / 2 - 90, canvas.height / 2 + 45);
         return;
     }
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Sinh pipe chậm hơn => dễ hơn
     if (frame % 160 === 0) createPipe();
 
-    // Cập nhật ống
-    pipes.forEach(pipe => {
-        pipe.x -= 2;
-        checkCollision(pipe);
+    pipes.forEach(p => {
+        p.x -= 2;
+        checkCollision(p);
     });
-    pipes = pipes.filter(pipe => pipe.x + pipe.width > 0);
+    pipes = pipes.filter(p => p.x + p.w > 0);
 
-    // Cập nhật "shit"
-    shits.forEach(shit => {
-        shit.x -= 2;
-        checkCollectShit(shit);
+    shits.forEach(s => {
+        s.x -= 2;
+        checkCollect(s);
     });
-    shits = shits.filter(shit => shit.x + shit.size > 0);
+    shits = shits.filter(s => s.x + s.size > 0);
 
-    // Vật lý con chó
-    bird.velocity += bird.gravity;
-    bird.y += bird.velocity;
+    bird.v += bird.g;
+    bird.y += bird.v;
 
-    // Vẽ
     drawPipes();
     drawShits();
     drawBird();
 
-    // Điểm
-    ctx.fillStyle = "black";
-    ctx.font = "20px Arial";
-    ctx.fillText("Score: " + score, 10, 25);
-
-    // Cộng điểm khi qua ống
-    pipes.forEach(pipe => {
-        if (pipe.x + pipe.width === bird.x) score++;
-    });
+    ctx.fillStyle = "#000";
+    ctx.font = "18px Poppins";
+    ctx.fillText("Điểm: " + score, 10, 25);
 
     frame++;
     requestAnimationFrame(update);
 }
 
-// ---- ĐIỀU KHIỂN ----
+// Điều khiển
 function jump() {
     if (gameOver) {
-        // reset
-        pipes = [];
-        shits = [];
-        bird.y = 150;
-        bird.velocity = 0;
-        score = 0;
-        frame = 0;
-        gameOver = false;
+        resetGame();
         update();
     } else {
-        bird.velocity = bird.lift;
+        bird.v = bird.lift;
+        gameStarted = true;
     }
 }
 
 document.addEventListener("keydown", e => {
     if (e.code === "Space" || e.code === "ArrowUp") jump();
 });
+document.getElementById("jumpBtn").addEventListener("touchstart", jump);
+document.getElementById("jumpBtn").addEventListener("click", jump);
 
-const btn = document.getElementById("jumpBtn");
-btn.addEventListener("touchstart", jump);
-btn.addEventListener("click", jump);
-
-// ---- BẮT ĐẦU ----
-update();
+// Nút bắt đầu
+document.getElementById("startBtn").addEventListener("click", () => {
+    document.getElementById("menu").style.display = "none";
+    update();
+});
