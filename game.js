@@ -129,7 +129,7 @@ function update() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Sinh pipe chậm hơn => dễ hơn
-    if (frame % 120 === 0) createPipe();
+    if (frame % 160 === 0) createPipe();
 
     // Cập nhật ống
     pipes.forEach(pipe => {
