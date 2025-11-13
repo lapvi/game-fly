@@ -9,17 +9,25 @@ function resizeCanvas() {
 resizeCanvas();
 window.addEventListener("resize", resizeCanvas);
 
+// Tải ảnh con chó
+const dogImg = new Image();
+dogImg.src = "dog.png";
+
 // Biến game
-let bird = { x: 50, y: 150, width: 30, height: 30, gravity: 0.5, lift: -8, velocity: 0 };
+let bird = { x: 50, y: 150, width: 40, height: 40, gravity: 0.5, lift: -8, velocity: 0 };
 let pipes = [];
 let frame = 0;
 let score = 0;
 let gameOver = false;
 
-// Vẽ chim
+// Vẽ chú chó
 function drawBird() {
-    ctx.fillStyle = "yellow";
-    ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
+    if (dogImg.complete) {
+        ctx.drawImage(dogImg, bird.x, bird.y, bird.width, bird.height);
+    } else {
+        ctx.fillStyle = "brown";
+        ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
+    }
 }
 
 // Tạo ống
